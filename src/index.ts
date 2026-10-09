@@ -53,14 +53,14 @@ function poll() {
     const me = gsi.me ?? steam.mySteamId();
     const all: CoplayEntry[] = steam.coplay();
     const ours = coplayForMatch(all, me, m.startedAt);
-    // Friends only matter while slots are missing; RP for other apps needs an explicit request.
+    // Friends only matter while slots are missing (names for spectated friends, RP check); RP needs an explicit request.
     const friends: FriendInGame[] = ours.length < SLOTS ? steam.friendsInGame() : [];
     for (const f of friends) if (f.appId === 730 && !rpRequested.has(f.id)) { rpRequested.add(f.id); steam.requestRichPresence(f.id); }
 
     const snap = JSON.stringify({ ours, friends });
     if (snap !== lastSnap) { lastSnap = snap; record("snapshot", { matchStartedAt: m.startedAt, coplay: ours, friends }); }
 
-    const next = buildRoster(ours, friends, m.map, lastPollAt);
+    const next = buildRoster(ours, friends, m, lastPollAt);
     for (const p of next) if (!firstSeen.has(p.id)) {
       const dt = lastPollAt - m.startedAt;
       firstSeen.set(p.id, dt);

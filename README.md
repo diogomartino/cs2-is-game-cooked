@@ -48,6 +48,6 @@ Start the app **before** loading into a map.
 - The UI loads Tailwind from a CDN, so the browser needs internet.
 
 - While the app runs, Steam shows you as playing **Spacewar** (AppID 480, needed to start the Steam API).
-- Friends don't appear in Steam's coplay list. Friends in CS2 fill the empty slots and are tagged "possibly here", because the app can't confirm they're in your match.
+- Friends don't appear in Steam's coplay list, so a friend is only shown once they're confirmed in your match. That happens when you spectate them while dead (GSI reports who you're watching), or when their rich presence shows your map and exact score. Friends who are merely playing CS2 are never shown.
 - Every push to `main` bumps the patch version, builds both executables, tags `vX.Y.Z`, and publishes a GitHub release (`.github/workflows/release.yml`).
 - `vendor/libsteam_api.so` and `vendor/steam_api64.dll` must be committed, because CI embeds them in the executables. Releases therefore redistribute Valve's Steamworks library.

@@ -15,24 +15,30 @@ test("coplay filter: CS2 only, within window, not me, not anonymous, oldest firs
   expect(got.map((c) => c.name)).toEqual(["Redkit", "Walkthrough", "Ghosty", "glyph", "HARVEY SPECTER", "bruxo.", "ghst", "Fer1t"]);
 });
 
-test("friend top-up fills only the missing slot, confident friend first", () => {
+const M = (map: string, score: [number, number] = [0, 0], seen: Record<string, string> = {}) => ({ map, score, seen });
+
+test("friends merely in CS2 are never shown", () => {
   const coplay = coplayForMatch(fx.coplay, fx.me, fx.matchStartedAt);
-  const r = buildRoster(coplay, fx.friends, "de_mirage", 1);
+  expect(buildRoster(coplay, fx.friends, M("de_inferno", [3, 5]), 1)).toHaveLength(8);
+  expect(buildRoster(coplay, fx.friends, M("de_mirage"), 1)).toHaveLength(8); // 0:0 → RP check skipped
+});
+
+test("friend confirmed by rich presence map + exact score", () => {
+  const coplay = coplayForMatch(fx.coplay, fx.me, fx.matchStartedAt);
+  const r = buildRoster(coplay, fx.friends, M("de_mirage", [5, 3]), 1);
   expect(r).toHaveLength(9);
   expect(r[8]).toMatchObject({ name: "pal-on-mirage", source: "friend" });
+  expect(buildRoster(coplay, fx.friends, M("de_mirage", [4, 3]), 1)).toHaveLength(8); // wrong score
 });
 
-test("unconfirmed friends are tagged friend? and never exceed missing count", () => {
+test("spectated players are confirmed: friend label if on friends list, else teammate", () => {
   const coplay = coplayForMatch(fx.coplay, fx.me, fx.matchStartedAt).slice(0, 7);
-  const r = buildRoster(coplay, fx.friends, "de_inferno", 1);
-  expect(r).toHaveLength(9);
-  expect(r.slice(7).map((p) => p.source)).toEqual(["friend?", "friend?"]);
-  expect(r.some((p) => p.name === "pal-in-other-game")).toBe(false);
+  const r = buildRoster(coplay, fx.friends, M("de_inferno", [1, 1], { "76561198000000021": "gsi-name", "76561198000000077": "rando" }), 1);
+  expect(r.slice(7)).toMatchObject([{ name: "pal-in-cs2", source: "friend" }, { name: "rando", source: "teammate" }]);
 });
 
-test("no top-up when 9 coplay players already found; dedupes friends already in coplay", () => {
+test("cap at 9; spectated coplay player isn't duplicated", () => {
   const full = Array.from({ length: 10 }, (_, i) => ({ id: `7656119800000010${i}`, name: `p${i}`, appId: 730, time: i }));
-  expect(buildRoster(full, fx.friends, "de_mirage", 1)).toHaveLength(9);
-  const dup = [{ ...fx.friends[0]!, id: full[0]!.id }];
-  expect(buildRoster(full.slice(0, 3), dup, "x", 1)).toHaveLength(3);
+  expect(buildRoster(full, fx.friends, M("de_mirage", [5, 3], { "76561198000000021": "x" }), 1)).toHaveLength(9);
+  expect(buildRoster(full.slice(0, 3), [], M("x", [0, 0], { [full[0]!.id]: "p0" }), 1)).toHaveLength(3);
 });

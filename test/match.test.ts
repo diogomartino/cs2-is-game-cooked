@@ -34,3 +34,19 @@ test("me survives payloads without provider", () => {
   const a = applyGsi({}, map("de_mirage"), 10);
   expect(applyGsi(a.state, { map: { name: "de_mirage" } }, 11).state.me).toBe(ME);
 });
+
+test("spectated players (not me) accumulate per match and reset on a new map", () => {
+  const spec = (id: string, map = "de_mirage") => ({ provider: { steamid: ME }, map: { name: map }, player: { steamid: id, name: "n" + id } });
+  let r = applyGsi({}, spec(ME), 1);
+  expect(r.state.match?.seen).toEqual({});
+  r = applyGsi(r.state, spec("76561198000000002"), 2);
+  r = applyGsi(r.state, spec("76561198000000003"), 3);
+  expect(Object.keys(r.state.match!.seen)).toEqual(["76561198000000002", "76561198000000003"]);
+  r = applyGsi(r.state, spec(ME, "de_inferno"), 4);
+  expect(r.state.match?.seen).toEqual({});
+});
+
+test("score comes from team_ct/team_t", () => {
+  const r = applyGsi({}, { map: { name: "de_mirage", team_ct: { score: 5 }, team_t: { score: 3 } } }, 1);
+  expect(r.state.match?.score).toEqual([5, 3]);
+});

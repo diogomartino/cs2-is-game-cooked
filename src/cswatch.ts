@@ -57,7 +57,7 @@ export function parseCsWatch(html: string): Partial<CsStats> | null {
 
 /** Throws on transient errors so they aren't cached. Unknown players come back 200 with no FACEIT data → null. */
 export async function fetchCsWatch(id: string): Promise<Partial<CsStats> | null> {
-  const res = await fetch(cswatchUrl(id), { headers: { "user-agent": "cs2-live-roster (personal tool; 1 req/s, 24h cache)" } });
+  const res = await fetch(cswatchUrl(id), { headers: { "user-agent": "cs2-is-game-cooked (personal tool; 1 req/s, 24h cache)" } });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`cswatch ${res.status}`);
   return parseCsWatch(await res.text());

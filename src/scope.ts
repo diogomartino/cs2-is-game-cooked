@@ -2,7 +2,7 @@
 // page (app.scope.gg/en/profile/<accountId>) calls. Undocumented — may change without notice.
 import type { CsStats, Stat } from "./cstracker";
 
-const UA = "cs2-live-roster (personal tool; 1 req/s, 24h cache)";
+const UA = "cs2-is-game-cooked (personal tool; 1 req/s, 24h cache)";
 const LIMIT = 20;
 export const accountId = (steamId64: string) => Number(BigInt(steamId64) - 76561197960265728n);
 export const scopeUrl = (id: string) => `https://app.scope.gg/en/profile/${accountId(id)}`;

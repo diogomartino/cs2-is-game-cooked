@@ -94,7 +94,7 @@ async function load(id: string): Promise<boolean> {
     // Entries without `sources` predate the current format → refetch.
     if (Date.now() - c.fetchedAt < TTL_MS && (c.data === null || c.data.sources)) { mem.set(id, c.data); return false; }
   }
-  const res = await fetch(csUrl(id), { headers: { "user-agent": "cs2-live-roster (personal tool; 1 req/s, 24h cache)" } });
+  const res = await fetch(csUrl(id), { headers: { "user-agent": "cs2-is-game-cooked (personal tool; 1 req/s, 24h cache)" } });
   let data: CsStats | null = null;
   if (res.ok) data = parseCsTracker(await res.text());
   else if (res.status === 404) data = await fallback(id);

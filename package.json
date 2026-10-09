@@ -10,7 +10,7 @@
     "probe": "bun scripts/probe.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "build": "bun build --compile --minify --target=bun-linux-x64 src/cli.ts --outfile dist/cs2-live-roster-linux-x64 && bun build --compile --minify --target=bun-windows-x64 src/cli.ts --outfile dist/cs2-live-roster-windows-x64.exe"
+    "build": "bun build --compile --minify --target=bun-linux-x64 src/cli.ts --outfile dist/cs2-is-game-cooked-linux-x64 && bun build --compile --minify --target=bun-windows-x64 src/cli.ts --outfile dist/cs2-is-game-cooked-windows-x64.exe"
   },
   "devDependencies": {
     "@types/bun": "latest",

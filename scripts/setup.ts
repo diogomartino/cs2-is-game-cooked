@@ -41,7 +41,7 @@ if (!token) {
   writeFileSync(".env", envText + (envText && !envText.endsWith("\n") ? "\n" : "") + `GSI_TOKEN=${token}\n`);
 }
 
-const cfg = `"CS2 Live Roster"
+const cfg = `"CS2 Is Game Cooked"
 {
   "uri"       "http://127.0.0.1:3000/gsi"
   "timeout"   "5.0"

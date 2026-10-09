@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "cs2-live-roster",
+      "name": "cs2-is-game-cooked",
       "devDependencies": {
         "@types/bun": "latest",
         "typescript": "^5",

@@ -34,7 +34,7 @@ export async function steamLibPath(): Promise<string> {
     ? (await import("../../vendor/steam_api64.dll", { with: { type: "file" } })).default
     : (await import("../../vendor/libsteam_api.so", { with: { type: "file" } })).default;
   if (!lib.includes("$bunfs") && !lib.includes("~BUN")) return lib; // running from source
-  const dir = join(tmpdir(), "cs2-live-roster");
+  const dir = join(tmpdir(), "cs2-is-game-cooked");
   const out = join(dir, basename(lib));
   const embedded = Bun.file(lib);
   // Same size → already extracted (and maybe loaded by another instance, so don't rewrite).

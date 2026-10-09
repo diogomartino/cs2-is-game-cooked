@@ -1,0 +1,23 @@
+{
+  "me": "76561198000000001",
+  "matchStartedAt": 1791494760,
+  "coplay": [
+    { "id": "76561198200000001", "name": "old-dota-guy", "appId": 252950, "time": 1791497000 },
+    { "id": "189429989741627465", "name": "anonymous", "appId": 730, "time": 1791494790 },
+    { "id": "76561198000000001", "name": "me", "appId": 730, "time": 1791494790 },
+    { "id": "76561198000000011", "name": "bruxo.", "appId": 730, "time": 1791494796 },
+    { "id": "76561198000000012", "name": "ghst", "appId": 730, "time": 1791494796 },
+    { "id": "76561198000000013", "name": "Fer1t", "appId": 730, "time": 1791494796 },
+    { "id": "76561198000000014", "name": "HARVEY SPECTER", "appId": 730, "time": 1791494792 },
+    { "id": "76561198000000015", "name": "Walkthrough", "appId": 730, "time": 1791494785 },
+    { "id": "76561198000000016", "name": "Ghosty", "appId": 730, "time": 1791494785 },
+    { "id": "76561198000000017", "name": "glyph", "appId": 730, "time": 1791494785 },
+    { "id": "76561198000000018", "name": "Redkit", "appId": 730, "time": 1791494780 },
+    { "id": "76561198000000099", "name": "last-match", "appId": 730, "time": 1791320694 }
+  ],
+  "friends": [
+    { "id": "76561198000000021", "name": "pal-in-cs2", "appId": 730, "gameIP": 0, "gamePort": 0, "queryPort": 0, "lobby": "0", "richPresence": {} },
+    { "id": "76561198000000022", "name": "pal-on-mirage", "appId": 730, "gameIP": 0, "gamePort": 0, "queryPort": 0, "lobby": "0", "richPresence": { "status": "Premier - Mirage [3:5]", "game:map": "de_mirage" } },
+    { "id": "76561198000000023", "name": "pal-in-other-game", "appId": 632360, "gameIP": 0, "gamePort": 0, "queryPort": 0, "lobby": "0", "richPresence": {} }
+  ]
+}

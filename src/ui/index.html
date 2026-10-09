@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" class="bg-zinc-950">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CS2 Live Roster</title>
+<!-- ponytail: Tailwind browser build (needs internet, compiles in-page); switch to bun-plugin-tailwind if offline use matters -->
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="min-h-screen bg-zinc-950 text-zinc-100 antialiased font-sans">
+<main class="p-4 pb-16 grid gap-4 grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3" id="list"></main>
+<footer id="status" class="fixed inset-x-0 bottom-0 border-t border-white/5 bg-zinc-950/95 px-6 py-2 flex flex-wrap gap-x-5 gap-y-1 text-xs text-zinc-500"></footer>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+  const ago = (t) => (t ? `${Math.max(0, Math.round(Date.now() / 1000 - t))}s ago` : "never");
+  const age = (t) => { if (!t) return null; const y = (Date.now() / 1000 - t) / 31557600; return y >= 1 ? `${y.toFixed(1)} yrs` : `${Math.round(y * 12)} mo`; };
+  // Official CS2 Premier tier colours and FACEIT level colours.
+  const premierColor = (r) => r < 5000 ? "#b0c3d9" : r < 10000 ? "#8cc6ff" : r < 15000 ? "#6a7dff" : r < 20000 ? "#c166ff" : r < 25000 ? "#f03cff" : r < 30000 ? "#eb4b4b" : "#ffd700";
+  const faceitColor = (l) => l <= 1 ? "#eeeeee" : l <= 3 ? "#1ce400" : l <= 7 ? "#ffc800" : l <= 9 ? "#ff6309" : "#fe1f00";
+  const trustColor = (t) => t >= 70 ? "bg-emerald-400" : t >= 40 ? "bg-amber-400" : "bg-red-500";
+  const tag = (cls, text, title = "") => `<span title="${esc(title)}" class="rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${cls}">${text}</span>`;
+  let last = null, connected = false;
+  // Profile links (bottom-left icons); keys double as stats source ids.
+  const LINKS = {
+    csrep:     { name: "csrep.gg",     domain: "csrep.gg",           url: (id) => `https://csrep.gg/player/${id}` },
+    steam:     { name: "Steam",        domain: "steamcommunity.com", url: (id) => `https://steamcommunity.com/profiles/${id}` },
+    cstracker: { name: "cstracker.gg", domain: "cstracker.gg",       url: (id) => `https://cstracker.gg/players/${id}` },
+    scope:     { name: "scope.gg",     domain: "scope.gg",           url: (id) => `https://app.scope.gg/en/profile/${BigInt(id) - 76561197960265728n}` },
+    cswatch:   { name: "cswat.ch",     domain: "cswat.ch",           url: (id) => `https://cswat.ch/stats/${id}` },
+    leetify:   { name: "Leetify",      domain: "leetify.com",        url: (id) => `https://leetify.com/app/profile/${id}` },
+    csstats:   { name: "csstats.gg",   domain: "csstats.gg",         url: (id) => `https://csstats.gg/player/${id}` },
+  };
+  // ponytail: favicons via Google's favicon service (sends only the domain); bundle icons if offline matters
+  const linkIcons = (id) => Object.values(LINKS).map((l) => `<a href="${esc(l.url(id))}" target="_blank" rel="noopener" title="Open on ${l.name}"
+      class="flex h-7 w-7 items-center justify-center rounded-md bg-white/5 ring-1 ring-white/10 transition hover:bg-white/15 hover:ring-white/30">
+      <img src="https://www.google.com/s2/favicons?domain=${l.domain}&sz=32" alt="${l.name}" class="h-4 w-4"></a>`).join("");
+
+  function card(p, i) {
+    if (!p) return `<div class="min-h-56 rounded-2xl border border-dashed border-white/10 flex items-center justify-center text-zinc-600">
+      <span class="font-mono text-sm">#${i + 1} · waiting for player…</span></div>`;
+    const cs = p.cs;
+    const tags = [];
+    if (p.source === "friend") tags.push(tag("border-sky-400/50 text-sky-300", "friend"));
+    if (p.source === "friend?") tags.push(tag("border-amber-400/50 text-amber-300", "friend · possibly here", "Friend in CS2; can't confirm they're in your match"));
+    if (p.visibility === "private") tags.push(tag("border-amber-400/30 text-amber-400/80", "private profile"));
+    if (p.vacBans || p.gameBans) tags.push(tag("border-red-500/60 bg-red-500/10 text-red-300", `${[p.vacBans && p.vacBans + " VAC", p.gameBans && p.gameBans + " game"].filter(Boolean).join(" · ")} ban · ${p.daysSinceLastBan}d ago`));
+    if (p.firstSeen != null) tags.push(tag("border-white/10 text-zinc-400", `+${p.firstSeen}s`, "Seconds after map load when this player appeared"));
+
+    const meta = [
+      p.level != null ? `<span class="inline-flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-zinc-400 px-1 text-[11px] font-bold text-white">${p.level}</span>` : `<span>Lv —</span>`,
+      `<span><b class="text-zinc-200 font-semibold">${esc(age(p.createdAt) ?? "—")}</b> old</span>`,
+      `<span><b class="text-zinc-200 font-semibold">${esc(p.friends ?? "—")}</b> friends</span>`,
+    ].join(`<span class="text-zinc-700">·</span>`);
+
+    const badges = [];
+    if (cs?.premier) badges.push(`<span class="rounded-md px-2.5 py-1 font-mono text-sm font-bold italic -skew-x-6 bg-black/40 border" style="color:${premierColor(cs.premier)};border-color:${premierColor(cs.premier)}66" title="Premier rating">${cs.premier.toLocaleString("en-US")}</span>`);
+    if (cs?.faceitLevel && cs.faceitElo !== 0) badges.push(`<span class="inline-flex items-center gap-1.5 rounded-md bg-black/40 border border-white/10 pl-1 pr-2 py-1" title="FACEIT level ${cs.faceitLevel}${cs.faceitElo ? ` · ${cs.faceitElo} ELO` : ""}${cs.faceitGame === "csgo" ? " (CS:GO, no CS2 FACEIT)" : ""}">
+      <span class="inline-flex h-6 w-6 items-center justify-center rounded-full border-2 text-xs font-black" style="color:${faceitColor(cs.faceitLevel)};border-color:${faceitColor(cs.faceitLevel)}">${cs.faceitLevel}</span>
+      ${cs.faceitElo ? `<span class="font-mono text-sm font-semibold text-zinc-200">${cs.faceitElo.toLocaleString("en-US")}</span>` : ""}</span>`);
+
+    let body;
+    if (cs === undefined) body = `<div class="text-sm text-zinc-500 animate-pulse">loading cstracker…</div>`;
+    else if (cs === null) body = `<div class="text-sm text-zinc-500">not on cstracker.gg, scope.gg, cswat.ch or Leetify</div>`;
+    else {
+      const recent = (cs.recent ?? "").split("").map((r) => `<span class="h-5 w-5 rounded text-[10px] font-bold flex items-center justify-center ${r === "W" ? "bg-emerald-500/20 text-emerald-300" : r === "L" ? "bg-red-500/20 text-red-300" : "bg-zinc-500/20 text-zinc-300"}">${r}</span>`).join("");
+      const stats = cs.stats.map((s) => `<div class="rounded-lg bg-white/[0.03] px-2.5 py-1.5">
+          <div class="text-[10px] uppercase tracking-wider text-zinc-500">${esc(s.label)}</div>
+          <div class="font-mono text-sm font-semibold text-zinc-100">${esc(s.value)}</div>
+          ${s.top ? `<div class="text-[10px] ${parseFloat(s.top) <= 10 ? "text-emerald-400" : "text-zinc-500"}">top ${esc(s.top)}</div>` : ""}
+        </div>`).join("");
+      body = `<div class="grid grid-cols-[1.5fr_1fr_1fr] gap-4 items-end">
+          <div><div class="text-[11px] uppercase tracking-wider text-zinc-400 font-semibold">Trust rating</div>
+            <div class="text-4xl font-black leading-tight">${cs.trust != null ? cs.trust + "%" : `—${!(cs.sources ?? []).includes("cstracker") ? `<span class="ml-2 text-xs font-normal text-zinc-500">only on cstracker</span>` : ""}`}</div>
+            ${cs.trust != null ? `<div class="mt-1 h-2 rounded-full bg-white/10"><div class="h-full rounded-full ${trustColor(cs.trust)}" style="width:${cs.trust}%"></div></div>` : ""}</div>
+          <div><div class="text-[10px] uppercase tracking-wider text-zinc-500">Win rate</div>
+            <div class="text-2xl font-bold">${esc(cs.winRate ?? "—")}</div>
+            <div class="text-[11px] text-zinc-500 font-mono">${esc(cs.wlt ?? "")}${cs.matches ? ` · ${cs.matches} m` : ""}</div></div>
+          <div><div class="text-[10px] uppercase tracking-wider text-zinc-500 mb-1">Recent</div><div class="flex flex-wrap gap-0.5">${recent || "—"}</div></div>
+        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5 mt-3">${stats}</div>`;
+    }
+
+    return `<article class="rounded-2xl border border-white/10 bg-gradient-to-b from-zinc-900 to-zinc-900/60 p-4 shadow-lg shadow-black/30 flex flex-col gap-3">
+      <div class="flex gap-4">
+        ${p.avatar ? `<img src="${esc(p.avatar)}" alt="" class="h-[72px] w-[72px] shrink-0 rounded-xl object-cover ring-1 ring-white/10">` : `<div class="h-[72px] w-[72px] shrink-0 rounded-xl bg-white/5 ring-1 ring-white/10"></div>`}
+        <div class="min-w-0 flex-1">
+          <div class="flex items-start gap-2">
+            <a href="https://steamcommunity.com/profiles/${esc(p.id)}" target="_blank" rel="noopener" class="truncate text-xl font-semibold hover:text-sky-300 hover:underline">${esc(p.name || p.id)}</a>
+            <div class="ml-auto flex shrink-0 items-center gap-2">${badges.join("")}</div>
+          </div>
+          <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-400">${meta}</div>
+          <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <a href="https://cstracker.gg/players/${esc(p.id)}" target="_blank" rel="noopener" class="font-mono text-[11px] text-zinc-600 hover:text-zinc-300">${esc(p.id)}</a>${tags.join("")}
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-white/5 pt-3">${body}</div>
+      <div class="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-white/5 pt-3">
+        <div class="flex flex-wrap gap-1.5">${linkIcons(p.id)}</div>
+        ${cs?.sources?.length ? `<div class="text-[10px] uppercase tracking-wider text-zinc-600">stats via ${cs.sources.map((src) => LINKS[src].name).join(" · ")}</div>` : ""}
+      </div>
+    </article>`;
+  }
+
+  function render() {
+    const s = last;
+    if (!s) return;
+    $("list").innerHTML = Array.from({ length: s.slots }, (_, i) => card(s.players[i], i)).join("");
+    const st = s.status;
+    const dot = (on) => `<span class="inline-block h-2 w-2 rounded-full mr-1.5 ${on ? "bg-emerald-400" : "bg-red-500"}"></span>`;
+    $("status").innerHTML = [
+      `<span>${dot(connected)}server</span>`,
+      `<span>${dot(st.steam)}Steam${st.steam ? "" : ": " + esc(st.steamError || "not connected")}</span>`,
+      `<span>${dot(st.gsiAt && Date.now() / 1000 - st.gsiAt < 60)}GSI ${ago(st.gsiAt)}</span>`,
+      `<span>last poll ${ago(st.pollAt)}</span>`,
+      st.webApi ? "" : `<span class="text-amber-400">set STEAM_WEB_API_KEY in .env for avatars, level, age, friends</span>`,
+      st.recording ? `<span class="text-red-400">● recording</span>` : "",
+    ].join("");
+  }
+
+  function connect() {
+    const ws = new WebSocket(`ws://${location.host}/ws`);
+    ws.onopen = () => { connected = true; render(); };
+    ws.onmessage = (e) => { last = JSON.parse(e.data); render(); };
+    ws.onclose = () => { connected = false; render(); setTimeout(connect, 1000); };
+  }
+  connect();
+  setInterval(render, 1000); // keep "Ns ago" fresh
+</script>
+</body>
+</html>

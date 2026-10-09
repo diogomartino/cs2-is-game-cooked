@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write # push the version-bump commit, tag, and release
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    # The bump commit pushed below carries [skip ci]; GITHUB_TOKEN pushes don't retrigger anyway.
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Check vendor libs are committed (they get embedded in the executables)
+        run: test -f vendor/libsteam_api.so && test -f vendor/steam_api64.dll
+
+      - run: bun test
+
+      - name: Bump patch version
+        id: version
+        run: |
+          npm version patch --no-git-tag-version > /dev/null
+          echo "tag=v$(jq -r .version package.json)" >> "$GITHUB_OUTPUT"
+
+      # Build before committing, so a failed build never leaves a bumped version behind.
+      - name: Compile standalone executables (Linux + Windows)
+        run: bun run build
+
+      - name: Commit, tag, push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: release ${{ steps.version.outputs.tag }} [skip ci]"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin HEAD:main "${{ steps.version.outputs.tag }}"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ steps.version.outputs.tag }}" dist/* --title "${{ steps.version.outputs.tag }}" --generate-notes

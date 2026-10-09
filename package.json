@@ -1,0 +1,19 @@
+{
+  "name": "cs2-is-game-cooked",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun src/index.ts",
+    "record": "bun src/index.ts --record",
+    "setup": "bun scripts/setup.ts",
+    "probe": "bun scripts/probe.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "build": "bun build --compile --minify --target=bun-linux-x64 src/cli.ts --outfile dist/cs2-live-roster-linux-x64 && bun build --compile --minify --target=bun-windows-x64 src/cli.ts --outfile dist/cs2-live-roster-windows-x64.exe"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5"
+  }
+}

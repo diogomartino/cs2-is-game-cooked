@@ -17,7 +17,7 @@ The Steam API library is embedded, so you don't need Bun or the Steamworks SDK. 
 | `cs2-is-game-cooked probe`     | Same as `bun run probe`                       |
 | `cs2-is-game-cooked --version` | Prints the version                            |
 
-`.env`, `cache/`, `logs/` and `steam_appid.txt` live in the folder you run it from.
+`.env`, `cache/`, `logs/` and `steam_appid.txt` live next to the executable, wherever you launch it from. To set `STEAM_WEB_API_KEY` or `LEETIFY_API_KEY`, create a `.env` file in that folder, one `KEY=value` per line. `setup` adds `GSI_TOKEN` itself. Variables already set in your shell take priority.
 
 ## Setup (from source)
 

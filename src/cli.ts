@@ -1,5 +1,8 @@
 // Single entry for the compiled executable: `cs2-live-roster [setup|probe] [--record]`.
 import { version } from "../package.json";
+import { useExeDir } from "./env";
+
+useExeDir(); // must run before the app modules below read process.env
 
 const cmd = process.argv[2];
 if (cmd === "--version" || cmd === "-v") { console.log(version); process.exit(0); }
